@@ -11,7 +11,7 @@ jobs:
         if: ${{ github.event.repository.name == 'mate_model_template' }}
         runs-on: ubuntu-latest
         outputs:
-            repos: ${{ steps.found-repos.outputs.repos }}
+            repo_matrix: ${{ steps.found-repos.outputs.repos }}
         steps:
             - name: Checkout
               uses: actions/checkout@v4
@@ -38,15 +38,14 @@ jobs:
                 ORG: ${{ github.repository_owner }}
               run: |
                 REPOS=$(python3 .github/scripts/find_repos.py)
-                echo "repos=${REPOS}" >> $GITHUB_OUTPUT
-                echo $REPOS
+                echo "repos=$(jq -cn --argjson environments "$REPOS" '{repo: $environments}')" >> $GITHUB_OUTPUT
+                jq -cn --argjson environments "$REPOS" '{repo: $environments}'
 
     copy-PR:
         needs: find-repos
         runs-on: ubuntu-latest
         strategy:
-            matrix:
-                repo: ['sandiford_2021_detachment', 'mather-2023-kimberlite-1']
+            matrix: ${{ fromJson(needs.find-repos.outputs.repo_matrix) }}
         steps:
             - name: Checkout
               uses: actions/checkout@v4
